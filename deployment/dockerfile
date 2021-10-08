@@ -1,0 +1,7 @@
+FROM ubuntu:18.04
+
+COPY example-plugin /bin/example-plugin
+
+RUN chmod +x /bin/example-plugin
+
+CMD [ "/bin/example-plugin" ]

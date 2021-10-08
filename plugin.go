@@ -53,8 +53,30 @@ func (e *examplePlugin) GetPreferredAllocation(ctx context.Context, preferred *p
 // 并告诉 kubelet 如何令 Device 可在容器中访问的所需执行的具体步骤
 func (e *examplePlugin) Allocate(ctx context.Context, allocate *pluginapi.AllocateRequest) (*pluginapi.AllocateResponse,error) {
 	allocations := make([]*pluginapi.ContainerAllocateResponse, len(allocate.ContainerRequests))
+	// 循环 pod 里面的所有容器
+	//for i := range allocations {
+	//	allocations[i] = &pluginapi.ContainerAllocateResponse{}
+	//}
+	//return &pluginapi.AllocateResponse{
+	//	ContainerResponses: allocations,
+	//}, nil
+
 	for i := range allocations {
-		allocations[i] = &pluginapi.ContainerAllocateResponse{}
+		allocations[i] = &pluginapi.ContainerAllocateResponse{
+			Mounts: []*pluginapi.Mount{{
+				HostPath: "/dev/mem",
+				ContainerPath: "/dev/mem",
+				ReadOnly: true,
+				}, {
+				HostPath: "/usr/sbin/dmidecode",
+				ContainerPath: "/usr/sbin/dmidecode",
+				ReadOnly: true,
+			}},
+			Envs: map[string]string{
+				"EXAMPLE": "true",
+				"USER": "HuYuan",
+			},
+		}
 	}
 	return &pluginapi.AllocateResponse{
 		ContainerResponses: allocations,

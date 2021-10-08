@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: example-plugin-client
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      name: example-plugin-client
+  template:
+    metadata:
+      labels:
+        name: example-plugin-client
+    spec:
+      tolerations:
+      - key: node-role.kubernetes.io/master
+        effect: NoSchedule
+      containers:
+      - name: example-plugin-client
+        image: "ubuntu:18.04"
+        securityContext:
+          privileged: true
+        command: ["tail", "-f", "/proc/1/stat"]
+        resources:
+          requests:
+            test.com/huyuan: 1
+          limits:
+            test.com/huyuan: 1
