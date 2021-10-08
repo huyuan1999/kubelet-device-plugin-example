@@ -6,7 +6,6 @@
 package main
 
 import (
-	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	pluginapi "k8s.io/kubelet/pkg/apis/deviceplugin/v1beta1"
 	"log"
@@ -24,7 +23,7 @@ func serve()  {
 	server := grpc.NewServer([]grpc.ServerOption{}...)
 	sock, err := net.Listen("unix", pluginSock)
 	if err != nil {
-		logrus.Fatalf("创建 unix socket 文件错误: %s", err.Error())
+		log.Fatalf("创建 unix socket 文件错误: %s", err.Error())
 	}
 
 	defer func() { _ = os.Remove(pluginSock) }()
@@ -33,9 +32,12 @@ func serve()  {
 	pluginapi.RegisterDevicePluginServer(server, &examplePlugin{})
 
 	if err := server.Serve(sock); err != nil {
-		logrus.Fatalf("启动 grpc server 错误: %s", err.Error())
+		log.Fatalf("启动 grpc server 错误: %s", err.Error())
 	}
-	conn, err := dialKubelet(pluginSock, 5*time.Second)
+}
+
+func checkRPCServer(socket string, timeout time.Duration)  {
+	conn, err := dialKubelet(socket, timeout)
 	if err != nil {
 		log.Fatalf("dialKubelet %s %s", pluginSock, err.Error())
 	}
@@ -43,12 +45,16 @@ func serve()  {
 }
 
 func main() {
+	go serve()
+	checkRPCServer(pluginSock, time.Second * 30)
 	plugin := examplePlugin{}
 	err := plugin.Register()
 	if err != nil {
 		log.Fatal("Register error", err)
 	}
-	serve()
+	select {
+
+	}
 }
 
 
