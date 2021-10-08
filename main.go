@@ -6,6 +6,7 @@
 package main
 
 import (
+	"github.com/fsnotify/fsnotify"
 	"google.golang.org/grpc"
 	pluginapi "k8s.io/kubelet/pkg/apis/deviceplugin/v1beta1"
 	"log"
@@ -44,7 +45,32 @@ func checkRPCServer(socket string, timeout time.Duration)  {
 	_ = conn.Close()
 }
 
+func watcherKubeletSocket()  {
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		log.Fatalln("初始化 fsnotify watcher 错误: ", err.Error())
+	}
+
+	err = watcher.Add(pluginapi.DevicePluginPath)
+	if err != nil {
+		log.Fatalf("add watcher file %s error: %s\n", pluginapi.DevicePluginPath, err.Error())
+	}
+
+	for {
+		select {
+		case event := <-watcher.Events:
+			if event.Name == pluginapi.KubeletSocket && event.Op&fsnotify.Create == fsnotify.Create {
+				// 退出插件程序, 由 kubelet 重新拉起
+				log.Fatalf("inotify: %s created, restarting.", pluginapi.KubeletSocket)
+			}
+		case err := <-watcher.Errors:
+			log.Printf("inotify: %s", err)
+		}
+	}
+}
+
 func main() {
+	go watcherKubeletSocket()
 	go serve()
 	checkRPCServer(pluginSock, time.Second * 30)
 	plugin := examplePlugin{}
@@ -56,9 +82,4 @@ func main() {
 
 	}
 }
-
-
-
-
-
 
