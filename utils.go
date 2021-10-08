@@ -17,15 +17,9 @@ func dialKubelet(unixSocketPath string, timeout time.Duration) (*grpc.ClientConn
 	ctx, cancel := context.WithTimeout(context.Background(), timeout)
 	defer cancel()
 
-	c, err := grpc.DialContext(ctx, unixSocketPath, grpc.WithInsecure(), grpc.WithBlock(),
+	return grpc.DialContext(ctx, unixSocketPath, grpc.WithInsecure(), grpc.WithBlock(),
 		grpc.WithContextDialer(func(ctx context.Context, addr string) (net.Conn, error) {
 			return net.DialTimeout("unix", addr, timeout)
 		}),
 	)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return c, nil
 }
